@@ -1,9 +1,9 @@
 import { Schema, model, models } from "mongoose";
 
 const UserSchema = new Schema({
-  email: { type: String, required: true, unique: true },
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  title: { type: String, required: true },
+  description: { type: String },
+  user: { type: Schema.Types.ObjectId, ref: "User" },
 });
-const User = models.User || model("User", UserSchema);
-export default User;
+const Note = models.Note || model("Note", UserSchema);
+export default Note;
