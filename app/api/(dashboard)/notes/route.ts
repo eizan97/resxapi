@@ -101,5 +101,64 @@ export const PATCH = async (request: Request) => {
         status: 404,
       });
     }
-  } catch (error) {}
+
+    const note = await Note.findOne({_id: noteId, user: userId});
+    if(!note){
+      return new NextResponse(
+        JSON.stringify({
+          message: "Note not found or does not belong to the user",
+        }),
+        {
+          status: 404,
+        }
+      )
+    }
+
+    const updatedNote = await Note.findByIdAndUpdate(
+      noteId,
+      {title, description},
+      { new : true}
+    );
+
+    return new NextResponse(
+      JSON.stringify({ message: "Note uptaded", note: updatedNote}),
+      {status: 200}
+    );
+  } catch (error) {
+    return new NextResponse(
+      JSON.stringify({
+        message: "Error in updating note",
+        error,
+      }),
+      {status: 500}
+    );
+  }
 };
+
+export const DELETE = async (request: Request) => {
+  try{
+    const { searchParams } = new URL(request.url);
+    const noteId = searchParams.get("noteId");
+    const userId = searchParams.get("userId");
+
+    if(!userId || !Types.ObjectId.isValid(userId)){
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid or missing userId"}),
+        {status: 400}
+      );
+    }
+    if(!noteId || Types.ObjectId.isValid(userId)){
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid or missing userId"}),
+        { status : 400}
+      );
+    }
+    if (!userId || !Types.ObjectId.isValid(noteId)){
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid or missing noteId"}),
+        {status: 400}
+      )
+    }
+  }
+  
+}
