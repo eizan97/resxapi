@@ -3,7 +3,6 @@ import connect from "@/lib/db";
 import Note from "@/lib/modals/notes";
 import { Types } from "mongoose";
 import User from "@/lib/modals/user";
-import { Jost } from "next/font/google";
 
 export const GET = async (request: Request) => {
   try {
@@ -102,8 +101,8 @@ export const PATCH = async (request: Request) => {
       });
     }
 
-    const note = await Note.findOne({_id: noteId, user: userId});
-    if(!note){
+    const note = await Note.findOne({ _id: noteId, user: userId });
+    if (!note) {
       return new NextResponse(
         JSON.stringify({
           message: "Note not found or does not belong to the user",
@@ -111,54 +110,70 @@ export const PATCH = async (request: Request) => {
         {
           status: 404,
         }
-      )
+      );
     }
 
-    const updatedNote = await Note.findByIdAndUpdate(
-      noteId,
-      {title, description},
-      { new : true}
-    );
+    const updatedNote = await Note.findByIdAndUpdate(noteId, { title, description }, { new: true });
 
-    return new NextResponse(
-      JSON.stringify({ message: "Note uptaded", note: updatedNote}),
-      {status: 200}
-    );
+    return new NextResponse(JSON.stringify({ message: "Note uptaded", note: updatedNote }), { status: 200 });
   } catch (error) {
     return new NextResponse(
       JSON.stringify({
         message: "Error in updating note",
         error,
       }),
-      {status: 500}
+      { status: 500 }
     );
   }
 };
 
 export const DELETE = async (request: Request) => {
-  try{
+  try {
     const { searchParams } = new URL(request.url);
     const noteId = searchParams.get("noteId");
     const userId = searchParams.get("userId");
 
-    if(!userId || !Types.ObjectId.isValid(userId)){
+    if (!userId || !Types.ObjectId.isValid(userId)) {
+      return new NextResponse(JSON.stringify({ message: "Invalid or missing userId" }), { status: 400 });
+    }
+
+    if (!noteId || !Types.ObjectId.isValid(noteId)) {
+      return new NextResponse(JSON.stringify({ message: "Invalid or missing noteId" }), { status: 400 });
+    }
+
+    await connect();
+
+    // Check if the user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return new NextResponse(JSON.stringify({ message: "User not found" }), {
+        status: 404,
+      });
+    }
+
+    // Check if the note exists and belongs to the user
+    const note = await Note.findOne({ _id: noteId, user: userId });
+    if (!note) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid or missing userId"}),
-        {status: 400}
+        JSON.stringify({
+          message: "Note not found or does not belong to the user",
+        }),
+        {
+          status: 404,
+        }
       );
     }
-    if(!noteId || Types.ObjectId.isValid(userId)){
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid or missing userId"}),
-        { status : 400}
-      );
-    }
-    if (!userId || !Types.ObjectId.isValid(noteId)){
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid or missing noteId"}),
-        {status: 400}
-      )
-    }
+
+    await Note.findByIdAndDelete(noteId);
+
+    return new NextResponse(JSON.stringify({ message: "Note deleted successfully" }), { status: 200 });
+  } catch (error) {
+    return new NextResponse(
+      JSON.stringify({
+        message: "Error in deleting note",
+        error,
+      }),
+      { status: 500 }
+    );
   }
-  
-}
+};
